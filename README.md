@@ -74,7 +74,7 @@ Voir le fichier `LICENSE` si présent dans le dépôt.
 ## 📬 Contact
 
 Prototype réalisé par **<Li>** — **<lijiale524@gmail.com / [linkdin](https://www.linkedin.com/in/li-jiale-d%C3%A9veloppeur-num%C3%A9rique/)>**.
-```
+
 
 
 ---
