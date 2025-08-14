@@ -6,7 +6,7 @@ Il combine **Power BI** (vue direction & dashboard) et **Python** (tendance lin�
 **Jeu de données.** Agrégation issue d’un export public de l’**Agence BIO** (France) – statistiques nationales.
 Fichier utilisé : `Export Productions Bio - National.xlsx` (provenant du site Agence BIO / éventuellement relayé sur data.gouv.fr).
 
-> Remplacer ce libellé par l’URL exacte de l’export si nécessaire.
+> https://www.agencebio.org/api/production/export?level=france
 
 ---
 
