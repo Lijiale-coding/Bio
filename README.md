@@ -66,7 +66,7 @@ Référence : https://www.agencebio.org/api/production/export?level=france
 
 ## 📄 Licence
 
-Sous **Licence MIT** (version française).  
+Sous **Licence MIT**.  
 Voir le fichier `LICENSE` si présent dans le dépôt.
 
 ---
