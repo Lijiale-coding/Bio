@@ -1,151 +1,80 @@
 # Bio Analytics — Mini Prototype (Power BI + Python)
 
-**Objectif.** Un mini prototype analytique autour de l’agriculture **Bio** en France (périmètre **National**, années **2008–2024**).
-Il combine **Power BI** (vue direction & dashboard) et **Python** (tendance linéaire, anomalies, backtest, prévision 2025).
+**Objectif.** Mini-prototype analytique autour de l’agriculture **Bio** en France (périmètre **National**, années **2008–2024**).  
+Vue direction avec **Power BI**, plus un script **Python** pour préparer deux fichiers agrégés (CSV) utilisés par le rapport.
 
-**Jeu de données.** Agrégation issue d’un export public de l’**Agence BIO** (France) – statistiques nationales.
-Fichier utilisé : `Export Productions Bio - National.xlsx` (provenant du site Agence BIO / éventuellement relayé sur data.gouv.fr).
-
-> https://www.agencebio.org/api/production/export?level=france
-
----
-
-## 🔎 Ce que montre le prototype
-
-**Page 1 – Vue « Executive »**
-
-* **3 KPI** : **Croissance sur la période sélectionnée** (Δ% = `Année max` vs `Année min`)
-
-  * Entreprises (aval)
-  * Exploitations bio **animales**
-  * Exploitations bio **végétales**
-* **Courbe YoY** (animaux / végétal / entreprises) avec ligne de base **0 %**.
-* **3 anneaux** : **part moyenne (%) par type** sur la période.
-
-**Page 2 – Model Monitor**
-
-* **Valeur observée vs tendance linéaire (OLS)**
-* **Anomalies** (|z| > 1,5) sur **résiduel** et **YoY**
-* **Backtest** (MAE / MAPE) + **prévision 2025** (linéaire & naïve)
-* Hypothèses de calcul clairement rappelées : **Echelle géographique = National**.
+**Source des données.** Export public de l’**Agence BIO** (France) — statistiques nationales.  
+Fichier exemple inclus : `Export Productions Bio - National.xlsx`  
+Référence : https://www.agencebio.org/api/production/export?level=france
 
 ---
 
-## 📁 Arborescence
+## 📁 Contenu du dépôt
 
 ```
+
 .
-├─ Bio.pbix                          # Rapport Power BI (exemple)
-├─ Export Productions Bio - National.xlsx
-├─ predictions_bio_poc.csv           # Valeur, tendance, résidu, YoY, z-scores, flags anomalies
-├─ model_summary_bio_poc.csv         # Slope/an, backtest MAE/MAPE, forecast 2025 (par indicateur)
-├─ action_traitement.py              # Script Python (génération CSV / POC)
-├─ notebooks/
-│  └─ poc_forecast.ipynb             # Notebook de la POC (tendance/retour arrière/anomalies)
-├─ pdf/
-│  ├─ Executive-2p.pdf
-│  └─ Model-Monitor-2p.pdf
+├─ Bio.pbix                          # Rapport Power BI (pages Executive + Model Monitor)
+├─ Export Productions Bio - National.xlsx   # Export national (exemple)
+├─ predictions\_bio\_poc.csv           # Série annuelle avec: value, pred\_linear, residual, yoy, z-scores, flags d’anomalie
+├─ model\_summary\_bio\_poc.csv         # Slope/an, backtest MAE/MAPE, prévision 2025 (par indicateur)
+├─ action\_traitement.py              # Script Python (préparation / export des CSV)
 └─ README.md
+
 ```
 
-> Pour un travail collaboratif, on peut sauvegarder en **.pbip** (projet Power BI) afin d’avoir `Report/`, `Dataset/model.tmdl`, `Queries/` diff-ables.
+> Les deux CSV sont déjà prêts à l’emploi et alimentent directement le PBIX.
 
 ---
 
-## 🚀 Ouverture & utilisation
+## 🚀 Utilisation
 
-1. Ouvrir **Power BI Desktop** et charger `Bio.pbix`.
-2. Utiliser le **segment Année** (table `Years`) pour fixer la **période d’analyse**.
-3. Lire les KPI comme **Δ% sur la période sélectionnée** (de `Année min` à `Année max`).
-4. La courbe montre le **YoY** annuel ; les anneaux montrent la **part moyenne** sur la période.
+1. Ouvrir **Power BI Desktop** et charger `Bio.pbix`.  
+2. Segment **Année** pour choisir la période d’analyse.  
+3. **Page Executive**  
+   - 3 KPI : **croissance sur la période sélectionnée** (Δ% = Année max vs Année min)  
+   - Courbe **YoY** (animaux / végétal / entreprises) avec ligne de base 0 %  
+   - Anneaux : **part moyenne (%)** par type sur la période  
+4. **Page Model Monitor**  
+   - **Observé vs tendance linéaire (OLS)**, **anomalies** (z-score |z|>1,5)  
+   - **Backtest** (MAE / MAPE) et **prévision 2025** (linéaire + naïve)  
+   - Hypothèse : **Echelle géographique = National**
 
-**Périmètre permanent** : *National*. Les totaux sont d’abord agrégés **par année**, puis les indicateurs (Δ%, YoY, résidu) sont calculés sur ces agrégats annuels.
-
----
-
-## 📐 Mesures DAX (extraits)
-
-**Années de la période (respectent le segment `Years`)**
-
-```DAX
-Année min (sél.) := MINX(ALLSELECTED('Years'[Année]), 'Years'[Année])
-Année max (sél.) := MAXX(ALLSELECTED('Years'[Année]), 'Years'[Année])
-```
-
-**Croissance sur la période – exemple « Exploitations animales »**
-(du végétal/entreprises : remplacer simplement la table/colonne)
-
-```DAX
-Exploitations animales – Croissance % (période) :=
-VAR y0 = [Année min (sél.)]
-VAR y1 = [Année max (sél.)]
-RETURN
-IF(
-    y0 = y1, BLANK(),
-    VAR v0 = CALCULATE(
-        SUM('Productions animales'[Nombre de fermes]),
-        FILTER(ALL('Productions animales'),
-               'Productions animales'[Année] = y0 &&
-               'Productions animales'[Echelle géographique] = "National"))
-    VAR v1 = CALCULATE(
-        SUM('Productions animales'[Nombre de fermes]),
-        FILTER(ALL('Productions animales'),
-               'Productions animales'[Année] = y1 &&
-               'Productions animales'[Echelle géographique] = "National"))
-    RETURN DIVIDE(v1 - v0, v0)
-)
-```
-
-> Variante possible : **CAGR** (taux de croissance annuel composé) si l’on souhaite une métrique « annualisée ».
+**Remarque de lecture.** Les KPI affichent la **variation globale** entre l’Année min et l’Année max de la sélection, tandis que la courbe montre la **variation annuelle (YoY)**.
 
 ---
 
-## 🧪 Méthode Python (POC)
+## 🧩 Script Python (facultatif)
 
-* **Agrégation** annuelle (National) pour *animales*, *végétales* et *entreprises aval*
-* **Tendance linéaire (OLS)** : `y = a + b·Année` (`numpy.polyfit`)
-* **Résidu & anomalies** : `residual = y - ŷ`, **z-score** sur résidu & YoY, seuil |z| > 1,5
-* **Backtest** : roulants – entraîne sur  t années, prédit *t+1* → **MAE / MAPE**
-* **Prévision 2025** : extrapolation linéaire + **naïve** (dernier point)
-* **Sorties** :
+`action_traitement.py` illustre la préparation des agrégats :  
+- agrégation annuelle (National)  
+- tendance linéaire (OLS), résidu, z‐score (résidu & YoY), flags d’anomalie  
+- backtest (MAE / MAPE)  
+- export vers `predictions_bio_poc.csv` et `model_summary_bio_poc.csv`
 
-  * `predictions_bio_poc.csv` – pour les visuels (courbe, points anomalie, tableau)
-  * `model_summary_bio_poc.csv` – pour les KPI de la page « Model Monitor »
-
-**Reproduire**
-
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate   |  macOS/Linux: source .venv/bin/activate
-pip install -r env/requirements.txt   # pandas, numpy, matplotlib
-jupyter lab                           # ouvrir notebooks/poc_forecast.ipynb
-```
+> L’exécution du script n’est pas requise pour consulter le rapport : les CSV fournis sont déjà générés.
 
 ---
 
 ## 🔒 Données & conformité
 
-* Le dépôt ne contient que des **données agrégées / exemples**.
-* Ne pas publier de données **sensibles** ou **soumises à droits** ; stocker toute donnée brute privée hors dépôt.
-* Si vous référencez la source, indiquer **Agence BIO (France)** – export national (éventuellement via **data.gouv.fr**).
+- Dépôt limité à des **données agrégées / exemples**.  
+- Ne pas publier de données sensibles/soumises à droits.  
+- Si vous référencez la source : **Agence BIO (France)** — export national.
 
 ---
 
 ## 📄 Licence
 
-Proposé sous **MIT** (modifiable selon vos besoins).
-
-```
-MIT License © 2025 <Votre Nom>
-```
+Sous **Licence MIT** (version française).  
+Voir le fichier `LICENSE` si présent dans le dépôt.
 
 ---
 
 ## 📬 Contact
 
-Prototype réalisé par **<Votre Nom>** — **\<votre e-mail / LinkedIn>**.
-Deux PDF fournis : **Executive (2p)** et **Model Monitor (2p)**.
+Prototype réalisé par **<Li>** — **<lijiale524@gmail.com / [linkdin](https://www.linkedin.com/in/li-jiale-d%C3%A9veloppeur-num%C3%A9rique/)>**.
+```
+
 
 ---
-
-*(Remplace `<Votre Nom>` et ajoute le lien exact de l’export Agence BIO si tu souhaites pointer vers la page source.)*
