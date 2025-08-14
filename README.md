@@ -3,6 +3,9 @@
 **Objectif.** Mini-prototype analytique autour de l’agriculture **Bio** en France (périmètre **National**, années **2008–2024**).  
 Vue direction avec **Power BI**, plus un script **Python** pour préparer deux fichiers agrégés (CSV) utilisés par le rapport.
 
+**Vidéo de présentation.**
+lien: https://youtu.be/x0ufmjc_EXY
+
 **Source des données.** Export public de l’**Agence BIO** (France) — statistiques nationales.  
 Fichier exemple inclus : `Export Productions Bio - National.xlsx`  
 Référence : https://www.agencebio.org/api/production/export?level=france
